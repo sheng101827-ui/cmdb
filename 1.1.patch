@@ -1,0 +1,12 @@
+diff --git a/package_upload.py b/package_upload.py
+index b94b3d0..e8a9c9d 100755
+--- a/package_upload.py
++++ b/package_upload.py
+@@ -24,6 +24,7 @@ def get_current_branch():
+ if __name__ == '__main__':
+     dt = datetime.datetime.now()
+     msg = dt.strftime("%Y%m%d%H%M")
++    msg = raw_input("请输入commit描述: ")
+     current_branch = get_current_branch()
+ 
+     run_cmd("git add *")
