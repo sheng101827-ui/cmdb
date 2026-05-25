@@ -1,0 +1,33 @@
+diff --git a/utils/es.py b/utils/es.py
+index ad91848..64e4746 100644
+--- a/utils/es.py
++++ b/utils/es.py
+@@ -1,5 +1,6 @@
+ from elasticsearch import Elasticsearch
+ from elasticsearch.client import IndicesClient
++from elasticsearch_dsl import Search
+ 
+ from django.conf import settings
+ 
+@@ -61,3 +62,21 @@ class Mapping:
+         }
+         field_mapping = self._generate_mapping(table)
+         return dict(**system_mapping, **field_mapping)
++
++
++def export_all_assets(index="_all", doc_type="data", page_size=1000):
++    results = []
++    from_offset = 0
++    while True:
++        s = Search(using=es, index=index, doc_type=doc_type)
++        s = s.from_(from_offset).size(page_size)
++        response = s.execute()
++        hits = response.hits
++        if not hits:
++            break
++        for hit in hits:
++            results.append(hit.to_dict())
++        if len(hits) < page_size:
++            break
++        from_offset += page_size
++    return results
