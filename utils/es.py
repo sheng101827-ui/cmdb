@@ -1,5 +1,6 @@
 from elasticsearch import Elasticsearch
 from elasticsearch.client import IndicesClient
+from elasticsearch_dsl import Search
 
 from django.conf import settings
 
@@ -61,3 +62,33 @@ class Mapping:
         }
         field_mapping = self._generate_mapping(table)
         return dict(**system_mapping, **field_mapping)
+
+
+def export_all_assets(indices=None, doc_type="data"):
+    """
+    导出全部资产数据
+    :param indices: 要查询的索引列表，默认为 None（查询所有索引）
+    :param doc_type: 文档类型，默认为 "data"
+    :return: 包含所有资产数据的列表
+    """
+    all_assets = []
+    batch_size = 1000
+    from_ = 0
+    
+    while True:
+        s = Search(using=es, index=indices, doc_type=doc_type)
+        s = s[from_:from_ + batch_size]
+        response = s.execute()
+        
+        if not response.hits:
+            break
+            
+        for hit in response.hits:
+            all_assets.append(hit.to_dict())
+            
+        if len(response.hits) < batch_size:
+            break
+            
+        from_ += batch_size
+    
+    return all_assets
