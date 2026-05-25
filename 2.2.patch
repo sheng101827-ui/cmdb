@@ -1,0 +1,51 @@
+diff --git a/utils/es.py b/utils/es.py
+index ad91848..1ffa01a 100644
+--- a/utils/es.py
++++ b/utils/es.py
+@@ -61,3 +61,46 @@ class Mapping:
+         }
+         field_mapping = self._generate_mapping(table)
+         return dict(**system_mapping, **field_mapping)
++
++
++from elasticsearch_dsl import Search
++
++def export_all_assets_by_pagination(index_name):
++    """
++    【警告】：按照需求描述使用 from_ 和 size 循环分页查询（不推荐）。
++    注意：Elasticsearch 默认的 max_result_window 为 10000。
++    当 from_ + size > 10000 时，会抛出 Result window is too large 异常。
++    因此这种方法无法直接导出 50 万条数据，除非修改集群配置，但这会带来极大的内存压力。
++    """
++    all_assets = []
++    from_ = 0
++    size = 1000
++    
++    while True:
++        # 使用切片语法 [from_:from_ + size] 设置分页
++        s = Search(using=es, index=index_name)[from_:from_ + size]
++        response = s.execute()
++        
++        if not response.hits:
++            break
++            
++        for hit in response:
++            all_assets.append(hit.to_dict())
++            
++        from_ += size
++        
++    return all_assets
++
++def export_all_assets(index_name):
++    """
++    【推荐】：正确的导出 50 万条资产数据的方式是使用 scan (底层封装了 Scroll API)。
++    专门用于处理大量数据的导出，不受 max_result_window 限制。
++    """
++    all_assets = []
++    s = Search(using=es, index=index_name)
++    
++    # scan() 方法每次在后台通过 scroll 获取数据，无需手动维护 from_ 和 size
++    for hit in s.scan():
++        all_assets.append(hit.to_dict())
++        
++    return all_assets
