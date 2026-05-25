@@ -1,5 +1,6 @@
 from elasticsearch import Elasticsearch
 from elasticsearch.client import IndicesClient
+from elasticsearch_dsl import Search
 
 from django.conf import settings
 
@@ -61,3 +62,27 @@ class Mapping:
         }
         field_mapping = self._generate_mapping(table)
         return dict(**system_mapping, **field_mapping)
+
+
+def export_all_assets():
+    assets = []
+    page_size = 1000
+    from_ = 0
+
+    indices = [table.name for table in mgmt_models.Table.objects.all()]
+
+    s = Search(using=es, index=indices, doc_type='data')
+
+    while True:
+        response = s[from_:from_ + page_size].execute()
+
+        hits = response.hits.hits
+        if not hits:
+            break
+
+        for hit in hits:
+            assets.append(hit.to_dict())
+
+        from_ += page_size
+
+    return assets
