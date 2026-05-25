@@ -22,8 +22,7 @@ def get_current_branch():
 
 
 if __name__ == '__main__':
-    dt = datetime.datetime.now()
-    msg = dt.strftime("%Y%m%d%H%M")
+    msg = raw_input("请输入commit描述信息: ")
     current_branch = get_current_branch()
 
     run_cmd("git add *")
